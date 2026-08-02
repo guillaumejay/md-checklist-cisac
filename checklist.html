@@ -310,7 +310,10 @@
     return {done, total, title: title || 'Sans titre'};
   }
 
-  function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function esc(s){
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+            .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
   function inline(s){
     return esc(s)
       .replace(/`([^`]+)`/g, '<code>$1</code>')
@@ -379,7 +382,7 @@
 
   function syncUrl(){
     const hash = '#c=' + pack(lines.join('\n'));
-    const full = location.origin + location.pathname + hash;
+    const full = location.href.replace(/#.*$/, '') + hash;
     urlBox.value = full;
     lenEl.textContent = full.length + ' caractères';
     try { history.replaceState(null, '', hash); } catch(e){}
