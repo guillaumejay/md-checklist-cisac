@@ -123,6 +123,7 @@ One file, read top to bottom:
 | `toggle` | Regex substitution on one source line |
 | `renderLib` | Stored-checklist browser |
 | `arrive` | Incoming-link routing and conflict detection |
+| `STR` / `t` / `applyLang` | UI string dictionary, lookup, and re-render on language switch |
 
 `lines` — the Markdown source split on newlines — is the single source of
 truth. Everything else is derived. `render()` rebuilds the list from scratch
@@ -160,8 +161,12 @@ Every storage access is inside a `try`.
 visible. `prefers-reduced-motion` disables transitions. Layout works down to
 mobile widths. Don't regress these while adding features.
 
-**French UI, English code.** All user-visible strings are French. Identifiers,
-comments, and this document are English.
+**Bilingual UI (FR/EN), English code.** All user-visible strings live in the
+`STR` dictionary (`fr`/`en`) and are looked up through `t()`. A toggle button
+switches languages and persists the choice under the `mdck!lang` key. Only UI
+chrome is translated — the Markdown content the user writes (including the
+default seed checklist) is never touched, since that text belongs to the user,
+not the interface. Identifiers, comments, and this document are English.
 
 ---
 

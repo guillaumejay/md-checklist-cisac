@@ -165,7 +165,7 @@
   </div>
 
   <div class="clash hidden" id="clash">
-    <h2>Ce lien contient une progression différente</h2>
+    <h2 id="clashTitle">Ce lien contient une progression différente</h2>
     <p id="clashText"></p>
     <div class="clash-acts">
       <button class="btn" id="takeLink">Charger le lien</button>
@@ -179,6 +179,7 @@
     <button class="btn" id="reset">Tout décocher</button>
     <button class="btn" id="toggleLib">Mes checklists</button>
     <button class="btn" id="newList">Nouvelle</button>
+    <button class="btn" id="toggleLang">EN</button>
   </div>
 
   <div class="sheet" id="sheet"></div>
@@ -187,11 +188,11 @@
 
   <div class="strip" id="strip">
     <div class="strip-label">
-      <span>Lien d'export</span>
+      <span id="exportLabel">Lien d'export</span>
       <span id="len"></span>
     </div>
     <input class="url" id="url" aria-label="Lien contenant la checklist et son état">
-    <p class="hint">Colle un lien ici et appuie sur Entrée pour l'importer.</p>
+    <p class="hint" id="hint">Colle un lien ici et appuie sur Entrée pour l'importer.</p>
     <p class="mem" id="mem"></p>
   </div>
 
@@ -264,6 +265,95 @@
     }
   };
 
+  /* ---------- langue ---------- */
+  const LANG_KEY = 'mdck!lang';
+  const STR = {
+    fr: {
+      crumbList: 'mémorisée sur cet appareil',
+      crumbLib: 'sur cet appareil',
+      labelNone: 'aucune case à cocher',
+      labelDone: 'terminé',
+      labelProgress: 'étapes faites',
+      clashTitle: 'Ce lien contient une progression différente',
+      clashText: (a, b) => 'Le lien est à ' + a.done + '/' + a.total +
+        ', la version enregistrée ici est à ' + b.done + '/' + b.total +
+        '. Rien n\'est écrasé tant que tu n\'as pas choisi.',
+      takeLink: 'Charger le lien',
+      keepMine: 'Garder ma version',
+      editText: 'Modifier le texte',
+      viewList: 'Voir la checklist',
+      copyLink: 'Copier le lien',
+      linkCopied: 'Lien copié',
+      linkSelected: 'Sélectionné — Ctrl+C',
+      uncheckAll: 'Tout décocher',
+      myLists: 'Mes checklists',
+      newList: 'Nouvelle',
+      exportLabel: 'Lien d\'export',
+      urlAria: 'Lien contenant la checklist et son état',
+      hint: 'Colle un lien ici et appuie sur Entrée pour l\'importer.',
+      editorAria: 'Source markdown',
+      memOn: 'Mémoire du navigateur active — la progression est conservée quand tu fermes la page.',
+      memOff: 'Mémoire du navigateur indisponible ici : la progression ne survivra pas à la fermeture. Ouvre le fichier téléchargé pour l\'activer.',
+      libEmpty: 'Aucune checklist mémorisée pour l\'instant.',
+      libCurrent: 'ouverte',
+      delConfirm: 'Confirmer',
+      delLabel: 'Supprimer',
+      delAria: name => 'Supprimer ' + name,
+      linkBad: 'Lien non reconnu — il doit contenir #c=…',
+      linkBroken: 'Lien illisible — le code après #c= est incomplet',
+      charCount: n => n + ' caractères',
+      untitled: 'Sans titre',
+      checklist: 'Checklist',
+      newListSeed: '# Nouvelle checklist\n\n- [ ] Première étape\n- [ ] Deuxième étape',
+      dateLocale: 'fr-FR',
+      langBtn: 'EN',
+      langAria: 'Switch to English',
+    },
+    en: {
+      crumbList: 'saved on this device',
+      crumbLib: 'on this device',
+      labelNone: 'no items to check',
+      labelDone: 'done',
+      labelProgress: 'steps done',
+      clashTitle: 'This link holds different progress',
+      clashText: (a, b) => 'The link is at ' + a.done + '/' + a.total +
+        ', the version saved here is at ' + b.done + '/' + b.total +
+        '. Nothing is overwritten until you choose.',
+      takeLink: 'Load the link',
+      keepMine: 'Keep my version',
+      editText: 'Edit text',
+      viewList: 'View checklist',
+      copyLink: 'Copy link',
+      linkCopied: 'Link copied',
+      linkSelected: 'Selected — Ctrl+C',
+      uncheckAll: 'Uncheck all',
+      myLists: 'My checklists',
+      newList: 'New',
+      exportLabel: 'Export link',
+      urlAria: 'Link containing the checklist and its state',
+      hint: 'Paste a link here and press Enter to import it.',
+      editorAria: 'Markdown source',
+      memOn: 'Browser storage active — progress is kept when you close the page.',
+      memOff: 'Browser storage unavailable here: progress won\'t survive closing the tab. Open the downloaded file to enable it.',
+      libEmpty: 'No checklist saved yet.',
+      libCurrent: 'open',
+      delConfirm: 'Confirm',
+      delLabel: 'Delete',
+      delAria: name => 'Delete ' + name,
+      linkBad: 'Link not recognised — it must contain #c=…',
+      linkBroken: 'Unreadable link — the code after #c= is incomplete',
+      charCount: n => n + ' characters',
+      untitled: 'Untitled',
+      checklist: 'Checklist',
+      newListSeed: '# New checklist\n\n- [ ] First step\n- [ ] Second step',
+      dateLocale: 'en-US',
+      langBtn: 'FR',
+      langAria: 'Passer en français',
+    },
+  };
+  let lang = store.get(LANG_KEY) === 'en' ? 'en' : 'fr';
+  const t = () => STR[lang];
+
   /* ---------- encodage ---------- */
   function pack(text){
     const bytes = new TextEncoder().encode(text);
@@ -307,7 +397,7 @@
       if ((m = l.match(RE_TASK))){ total++; if (m[2].toLowerCase()==='x') done++; }
       else if (title === null && (m = l.match(/^#\s+(.*)$/))) title = m[1].trim();
     });
-    return {done, total, title: title || 'Sans titre'};
+    return {done, total, title: title || t().untitled};
   }
 
   function esc(s){
@@ -364,11 +454,11 @@
       }
     });
 
-    titleEl.textContent = h1 || 'Checklist';
-    document.title = (h1 || 'Checklist') + ' — ' + done + '/' + total;
+    titleEl.textContent = h1 || t().checklist;
+    document.title = (h1 || t().checklist) + ' — ' + done + '/' + total;
     countEl.textContent = done + ' / ' + total;
-    labelEl.textContent = total === 0 ? 'aucune case à cocher'
-                        : done === total ? 'terminé' : 'étapes faites';
+    labelEl.textContent = total === 0 ? t().labelNone
+                        : done === total ? t().labelDone : t().labelProgress;
     fillEl.style.width = total ? (done/total*100) + '%' : '0%';
     syncUrl();
   }
@@ -384,7 +474,7 @@
     const hash = '#c=' + pack(lines.join('\n'));
     const full = location.href.replace(/#.*$/, '') + hash;
     urlBox.value = full;
-    lenEl.textContent = full.length + ' caractères';
+    lenEl.textContent = t().charCount(full.length);
     try { history.replaceState(null, '', hash); } catch(e){}
   }
 
@@ -413,7 +503,7 @@
     }).filter(Boolean).sort((a,b) => b.at - a.at);
 
     if (!items.length){
-      lib.innerHTML = '<div class="empty">Aucune checklist mémorisée pour l\'instant.</div>';
+      lib.innerHTML = '<div class="empty">' + esc(t().libEmpty) + '</div>';
       return;
     }
 
@@ -424,7 +514,7 @@
       const open = document.createElement('button');
       open.className = 'lib-open';
       open.type = 'button';
-      const when = it.at ? new Date(it.at).toLocaleDateString('fr-FR',
+      const when = it.at ? new Date(it.at).toLocaleDateString(t().dateLocale,
                     {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
       open.innerHTML = '<span class="lib-name">' + esc(it.title) + '</span>' +
         '<span class="lib-meta">' + it.done + '/' + it.total + ' · ' + when + '</span>';
@@ -433,19 +523,19 @@
 
       if (it.id === fp){
         const tag = document.createElement('span');
-        tag.className = 'lib-cur'; tag.textContent = 'ouverte';
+        tag.className = 'lib-cur'; tag.textContent = t().libCurrent;
         row.appendChild(tag);
       }
 
       const del = document.createElement('button');
       del.className = 'lib-del'; del.type = 'button';
-      del.textContent = 'Supprimer';
-      del.setAttribute('aria-label', 'Supprimer ' + it.title);
+      del.textContent = t().delLabel;
+      del.setAttribute('aria-label', t().delAria(it.title));
       del.addEventListener('click', () => {
         if (del.dataset.armed !== '1'){
           del.dataset.armed = '1';
-          del.textContent = 'Confirmer';
-          setTimeout(() => { del.dataset.armed=''; del.textContent='Supprimer'; }, 3000);
+          del.textContent = t().delConfirm;
+          setTimeout(() => { del.dataset.armed=''; del.textContent=t().delLabel; }, 3000);
           return;
         }
         store.del(it.key);
@@ -459,6 +549,13 @@
   }
 
   /* ---------- vues ---------- */
+  function refreshChrome(){
+    $('toggleEdit').classList.toggle('is-on', view === 'edit');
+    $('toggleEdit').textContent = view === 'edit' ? t().viewList : t().editText;
+    $('toggleLib').classList.toggle('is-on', view === 'lib');
+    crumb.textContent = view === 'lib' ? t().crumbLib : t().crumbList;
+  }
+
   function showView(v){
     view = v;
     sheet.classList.toggle('hidden', v !== 'list');
@@ -466,25 +563,46 @@
     lib.classList.toggle('hidden', v !== 'lib');
     gauge.classList.toggle('hidden', v === 'lib');
     strip.classList.toggle('hidden', v === 'lib');
-    $('toggleEdit').classList.toggle('is-on', v === 'edit');
-    $('toggleEdit').textContent = v === 'edit' ? 'Voir la checklist' : 'Modifier le texte';
-    $('toggleLib').classList.toggle('is-on', v === 'lib');
-    crumb.textContent = v === 'lib' ? 'sur cet appareil' : 'mémorisée sur cet appareil';
+    refreshChrome();
     if (v === 'lib') renderLib();
     if (v === 'edit'){ editor.value = lines.join('\n'); editor.focus(); }
   }
 
   /* ---------- conflit ---------- */
-  function askConflict(linkText, mineText){
+  function updateClashText(){
+    if (pendingLink === null) return;
+    clashText.textContent = t().clashText(stats(pendingLink), stats(lines.join('\n')));
+  }
+  function askConflict(linkText){
     pendingLink = linkText;
-    const a = stats(linkText), b = stats(mineText);
-    clashText.textContent =
-      'Le lien est à ' + a.done + '/' + a.total +
-      ', la version enregistrée ici est à ' + b.done + '/' + b.total +
-      '. Rien n\'est écrasé tant que tu n\'as pas choisi.';
+    updateClashText();
     clash.classList.remove('hidden');
   }
   function closeConflict(){ clash.classList.add('hidden'); pendingLink = null; }
+
+  /* ---------- application de la langue ---------- */
+  function applyLang(){
+    document.documentElement.lang = lang;
+    const langBtn = $('toggleLang');
+    langBtn.textContent = t().langBtn;
+    langBtn.setAttribute('aria-label', t().langAria);
+    $('copy').textContent = t().copyLink;
+    $('reset').textContent = t().uncheckAll;
+    $('toggleLib').textContent = t().myLists;
+    $('newList').textContent = t().newList;
+    $('takeLink').textContent = t().takeLink;
+    $('keepMine').textContent = t().keepMine;
+    $('clashTitle').textContent = t().clashTitle;
+    $('exportLabel').textContent = t().exportLabel;
+    $('hint').textContent = t().hint;
+    urlBox.setAttribute('aria-label', t().urlAria);
+    editor.setAttribute('aria-label', t().editorAria);
+    memEl.textContent = persistent ? t().memOn : t().memOff;
+    refreshChrome();
+    updateClashText();
+    render();
+    if (view === 'lib') renderLib();
+  }
 
   $('takeLink').addEventListener('click', () => {
     if (pendingLink !== null) load(pendingLink);
@@ -503,14 +621,20 @@
   });
 
   $('newList').addEventListener('click', () => {
-    load('# Nouvelle checklist\n\n- [ ] Première étape\n- [ ] Deuxième étape');
+    load(t().newListSeed);
     showView('edit');
+  });
+
+  $('toggleLang').addEventListener('click', () => {
+    lang = lang === 'fr' ? 'en' : 'fr';
+    store.set(LANG_KEY, lang);
+    applyLang();
   });
 
   $('copy').addEventListener('click', async () => {
     const btn = $('copy'), old = btn.textContent;
-    try { await navigator.clipboard.writeText(urlBox.value); btn.textContent = 'Lien copié'; }
-    catch(e){ urlBox.select(); btn.textContent = 'Sélectionné — Ctrl+C'; }
+    try { await navigator.clipboard.writeText(urlBox.value); btn.textContent = t().linkCopied; }
+    catch(e){ urlBox.select(); btn.textContent = t().linkSelected; }
     setTimeout(() => { btn.textContent = old; }, 1600);
   });
 
@@ -522,10 +646,10 @@
   urlBox.addEventListener('keydown', e => {
     if (e.key !== 'Enter') return;
     const m = urlBox.value.match(/[#?&]c=([A-Za-z0-9_-]+)/);
-    if (!m){ urlBox.value = 'Lien non reconnu — il doit contenir #c=…'; return; }
+    if (!m){ urlBox.value = t().linkBad; return; }
     let text;
     try { text = unpack(m[1]); }
-    catch(err){ urlBox.value = 'Lien illisible — le code après #c= est incomplet'; return; }
+    catch(err){ urlBox.value = t().linkBroken; return; }
     arrive(text);
   });
 
@@ -538,13 +662,10 @@
     if (rec.md === text){ load(text); showView('list'); return; }
     load(rec.md, false);          // on garde la version locale par défaut
     showView('list');
-    askConflict(text, rec.md);
+    askConflict(text);
   }
 
   /* ---------- démarrage ---------- */
-  memEl.textContent = persistent
-    ? 'Mémoire du navigateur active — la progression est conservée quand tu fermes la page.'
-    : 'Mémoire du navigateur indisponible ici : la progression ne survivra pas à la fermeture. Ouvre le fichier téléchargé pour l\'activer.';
   memEl.classList.toggle('off', !persistent);
 
   const fromUrl = location.hash.match(/[#&]c=([A-Za-z0-9_-]+)/);
@@ -562,5 +683,6 @@
     }
   }
   showView('list');
+  applyLang();
 })();
 </script>
