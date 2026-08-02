@@ -1,0 +1,563 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Checklist</title>
+<style>
+  :root{
+    --paper:#E6EBEF;
+    --card:#FFFFFF;
+    --ink:#0F1B26;
+    --muted:#5A6C7C;
+    --line:#C9D4DC;
+    --line-soft:#E4EAEF;
+    --accent:#0E7C6B;
+    --accent-soft:#DDEFEA;
+    --warn:#8A5A12;
+    --warn-soft:#FBF0DC;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;padding:24px 16px 40px;
+    background:var(--paper);color:var(--ink);
+    font-family:var(--sans);font-size:16px;line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:720px;margin:0 auto}
+
+  .masthead{
+    display:flex;align-items:baseline;justify-content:space-between;
+    gap:16px;flex-wrap:wrap;padding-bottom:12px;border-bottom:2px solid var(--ink);
+  }
+  .masthead h1{margin:0;font-size:19px;font-weight:650;letter-spacing:-0.01em}
+  .eyebrow{
+    font-family:var(--mono);font-size:11px;letter-spacing:0.08em;
+    text-transform:uppercase;color:var(--muted);
+  }
+
+  .gauge{margin:18px 0 20px}
+  .gauge-top{display:flex;align-items:baseline;gap:10px;
+    font-family:var(--mono);font-size:13px;color:var(--muted)}
+  .gauge-count{font-size:22px;color:var(--ink);font-weight:600;letter-spacing:-0.02em}
+  .gauge-track{margin-top:8px;height:6px;background:var(--line-soft);
+    border-radius:999px;overflow:hidden}
+  .gauge-fill{height:100%;width:0;background:var(--accent);
+    border-radius:999px;transition:width .25s ease}
+
+  .bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+  .btn{
+    font-family:var(--mono);font-size:12px;letter-spacing:0.04em;
+    padding:7px 12px;border:1px solid var(--line);border-radius:7px;
+    background:var(--card);color:var(--ink);cursor:pointer;
+    transition:border-color .15s, background .15s;
+  }
+  .btn:hover{border-color:var(--muted)}
+  .btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .btn.is-on{background:var(--ink);color:var(--card);border-color:var(--ink)}
+  .btn.danger{color:var(--warn)}
+
+  /* conflit */
+  .clash{
+    background:var(--warn-soft);border:1px solid #E4CE9E;border-radius:10px;
+    padding:14px 16px;margin-bottom:16px;
+  }
+  .clash h2{margin:0 0 4px;font-size:14px;font-weight:650;color:var(--warn)}
+  .clash p{margin:0 0 12px;font-size:14px;color:#6B4A11}
+  .clash-acts{display:flex;gap:8px;flex-wrap:wrap}
+
+  .sheet{background:var(--card);border:1px solid var(--line);
+    border-radius:10px;padding:6px 0}
+
+  .head{
+    padding:20px 16px 8px;font-size:12px;font-family:var(--mono);
+    letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);
+    border-bottom:1px solid var(--line-soft);margin-bottom:6px;
+  }
+  .head:first-child{padding-top:12px}
+  .note{padding:4px 16px 4px 60px;font-size:14px;color:var(--muted)}
+
+  .task{
+    display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;
+    padding:9px 16px;border:0;background:none;font:inherit;color:inherit;
+    cursor:pointer;border-radius:6px;
+  }
+  .task:hover{background:#F5F8FA}
+  .task:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+  .idx{font-family:var(--mono);font-size:11px;color:var(--muted);
+    width:20px;flex:none;padding-top:4px;text-align:right}
+  .tick{
+    width:19px;height:19px;flex:none;margin-top:2px;
+    border:1.5px solid var(--line);border-radius:5px;
+    display:grid;place-items:center;transition:background .15s, border-color .15s;
+  }
+  .tick svg{width:11px;height:11px;stroke:var(--card);stroke-width:2.6;fill:none;
+    stroke-linecap:round;stroke-linejoin:round;opacity:0;transform:scale(.6);
+    transition:opacity .15s, transform .15s}
+  .task[aria-pressed="true"] .tick{background:var(--accent);border-color:var(--accent)}
+  .task[aria-pressed="true"] .tick svg{opacity:1;transform:scale(1)}
+  .task[aria-pressed="true"] .txt{color:var(--muted);text-decoration:line-through;
+    text-decoration-color:var(--line)}
+  .task[aria-pressed="true"] .idx{color:var(--accent)}
+  .txt{flex:1;padding-top:1px}
+  .txt code{font-family:var(--mono);font-size:.85em;background:var(--accent-soft);
+    padding:1px 5px;border-radius:4px}
+  .txt a{color:var(--accent)}
+  .sub{margin-left:22px}
+
+  textarea{
+    width:100%;min-height:320px;padding:16px;
+    font-family:var(--mono);font-size:13.5px;line-height:1.65;
+    color:var(--ink);background:var(--card);
+    border:1px solid var(--line);border-radius:10px;resize:vertical;
+  }
+  textarea:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:transparent}
+
+  /* bibliothèque */
+  .lib{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .lib-row{display:flex;align-items:center;gap:12px;padding:12px 16px;
+    border-bottom:1px solid var(--line-soft)}
+  .lib-row:last-child{border-bottom:0}
+  .lib-open{flex:1;text-align:left;border:0;background:none;font:inherit;
+    color:inherit;cursor:pointer;padding:0;border-radius:4px}
+  .lib-open:hover .lib-name{color:var(--accent)}
+  .lib-open:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+  .lib-name{font-weight:600;font-size:15px;display:block}
+  .lib-meta{font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .lib-cur{font-family:var(--mono);font-size:10px;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--accent);border:1px solid var(--accent);
+    border-radius:4px;padding:1px 5px}
+  .lib-del{border:0;background:none;color:var(--muted);cursor:pointer;
+    font-family:var(--mono);font-size:12px;padding:4px 6px;border-radius:5px}
+  .lib-del:hover{color:var(--warn);background:var(--warn-soft)}
+  .empty{padding:24px 16px;color:var(--muted);font-size:14px}
+
+  .strip{margin-top:22px;padding-top:14px;border-top:1px dashed var(--line)}
+  .strip-label{font-family:var(--mono);font-size:11px;letter-spacing:0.08em;
+    text-transform:uppercase;color:var(--muted);margin-bottom:7px;
+    display:flex;justify-content:space-between;gap:10px}
+  .url{
+    width:100%;padding:10px 12px;font-family:var(--mono);font-size:11.5px;
+    line-height:1.5;color:var(--muted);background:#DFE6EB;
+    border:1px solid var(--line);border-radius:7px;white-space:nowrap;overflow-x:auto;
+  }
+  .url:focus{outline:2px solid var(--accent);outline-offset:1px}
+  .hint{font-size:13px;color:var(--muted);margin-top:10px}
+  .mem{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:14px}
+  .mem.off{color:var(--warn)}
+
+  .hidden{display:none}
+  @media (prefers-reduced-motion: reduce){*{transition:none !important}}
+</style>
+
+<div class="wrap">
+
+  <div class="masthead">
+    <h1 id="title">Checklist</h1>
+    <span class="eyebrow" id="crumb">mémorisée sur cet appareil</span>
+  </div>
+
+  <div class="gauge" id="gauge">
+    <div class="gauge-top">
+      <span class="gauge-count" id="count">0 / 0</span>
+      <span id="countLabel">étapes faites</span>
+    </div>
+    <div class="gauge-track"><div class="gauge-fill" id="fill"></div></div>
+  </div>
+
+  <div class="clash hidden" id="clash">
+    <h2>Ce lien contient une progression différente</h2>
+    <p id="clashText"></p>
+    <div class="clash-acts">
+      <button class="btn" id="takeLink">Charger le lien</button>
+      <button class="btn is-on" id="keepMine">Garder ma version</button>
+    </div>
+  </div>
+
+  <div class="bar">
+    <button class="btn" id="toggleEdit">Modifier le texte</button>
+    <button class="btn" id="copy">Copier le lien</button>
+    <button class="btn" id="reset">Tout décocher</button>
+    <button class="btn" id="toggleLib">Mes checklists</button>
+    <button class="btn" id="newList">Nouvelle</button>
+  </div>
+
+  <div class="sheet" id="sheet"></div>
+  <textarea id="editor" class="hidden" spellcheck="false" aria-label="Source markdown"></textarea>
+  <div class="lib hidden" id="lib"></div>
+
+  <div class="strip" id="strip">
+    <div class="strip-label">
+      <span>Lien d'export</span>
+      <span id="len"></span>
+    </div>
+    <input class="url" id="url" aria-label="Lien contenant la checklist et son état">
+    <p class="hint">Colle un lien ici et appuie sur Entrée pour l'importer.</p>
+    <p class="mem" id="mem"></p>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  const DEFAULT = `# Dépannage AP UniFi
+
+## Alimentation
+- [ ] Couper le PoE des deux AP 30 s, rebrancher, attendre 5 min
+- [ ] Vérifier que l'injecteur est bien **802.3af** (~13 W par U7 Lite)
+- [ ] Vérifier le budget PoE total du switch
+
+## Garage — bloqué en Adopting
+- [ ] Reset usine : bouton \`reset\` 10 s jusqu'au clignotement
+- [ ] Ré-adopter en filaire si possible
+- [ ] Mettre à jour le firmware après adoption
+
+## Chambre Mathieu — Isolated
+- [ ] Vérifier si l'AP est en mesh ou en filaire
+  - En mesh, contrôler le signal vers l'UDR7
+- [ ] Tester le câble et le port du switch
+- [ ] Rapprocher l'AP si le lien mesh est faible
+
+## Fond
+- [ ] Firmware UDR7 à jour
+- [ ] Firmware des deux U7 Lite à jour`;
+
+  const PREFIX = 'mdck:';
+  const LAST   = 'mdck!last';
+
+  const $ = id => document.getElementById(id);
+  const sheet=$('sheet'), editor=$('editor'), lib=$('lib'), urlBox=$('url'),
+        countEl=$('count'), labelEl=$('countLabel'), fillEl=$('fill'),
+        lenEl=$('len'), titleEl=$('title'), crumb=$('crumb'), memEl=$('mem'),
+        gauge=$('gauge'), strip=$('strip'), clash=$('clash'), clashText=$('clashText');
+
+  let lines = [];
+  let fp = null;
+  let view = 'list';            // list | edit | lib
+  let pendingLink = null;       // texte du lien en attente d'arbitrage
+
+  /* ---------- stockage : localStorage, sinon mémoire volatile ---------- */
+  const mem = new Map();
+  let persistent = true;
+  try {
+    localStorage.setItem('mdck!probe','1');
+    localStorage.removeItem('mdck!probe');
+  } catch(e){ persistent = false; }
+
+  const store = {
+    get(k){
+      try { return persistent ? localStorage.getItem(k) : (mem.has(k)?mem.get(k):null); }
+      catch(e){ return null; }
+    },
+    set(k,v){
+      try { persistent ? localStorage.setItem(k,v) : mem.set(k,v); } catch(e){}
+    },
+    del(k){
+      try { persistent ? localStorage.removeItem(k) : mem.delete(k); } catch(e){}
+    },
+    keys(){
+      try {
+        const src = persistent ? Object.keys(localStorage) : [...mem.keys()];
+        return src.filter(k => k.indexOf(PREFIX) === 0);
+      } catch(e){ return []; }
+    }
+  };
+
+  /* ---------- encodage ---------- */
+  function pack(text){
+    const bytes = new TextEncoder().encode(text);
+    let bin = '';
+    for (const b of bytes) bin += String.fromCharCode(b);
+    return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  }
+  function unpack(s){
+    s = s.replace(/-/g,'+').replace(/_/g,'/');
+    while (s.length % 4) s += '=';
+    const bin = atob(s);
+    return new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0)));
+  }
+
+  const RE_TASK = /^(\s*)[-*+]\s+\[([ xX])\]\s*(.*)$/;
+  const RE_HEAD = /^(#{1,6})\s+(.*)$/;
+  const RE_NOTE = /^(\s*)[-*+]\s+(.*)$/;
+
+  /* ---------- identité : le texte, sans les cases ---------- */
+  function fingerprint(text){
+    const sig = text.split('\n').map(l => {
+      let m;
+      if ((m = l.match(RE_TASK))) return 'T' + m[3].trim().replace(/\s+/g,' ');
+      if ((m = l.match(RE_HEAD))) return 'H' + m[2].trim().replace(/\s+/g,' ');
+      return null;
+    }).filter(Boolean).join('\u0001');
+
+    let h = 0x811c9dc5;
+    for (let i = 0; i < sig.length; i++){
+      h ^= sig.charCodeAt(i);
+      h = (h + ((h<<1)+(h<<4)+(h<<7)+(h<<8)+(h<<24))) >>> 0;
+    }
+    return h.toString(36);
+  }
+
+  /* ---------- lecture ---------- */
+  function stats(text){
+    let done = 0, total = 0, title = null;
+    text.split('\n').forEach(l => {
+      let m;
+      if ((m = l.match(RE_TASK))){ total++; if (m[2].toLowerCase()==='x') done++; }
+      else if (title === null && (m = l.match(/^#\s+(.*)$/))) title = m[1].trim();
+    });
+    return {done, total, title: title || 'Sans titre'};
+  }
+
+  function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function inline(s){
+    return esc(s)
+      .replace(/`([^`]+)`/g, '<code>$1</code>')
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  }
+
+  /* ---------- rendu ---------- */
+  function render(){
+    sheet.innerHTML = '';
+    let done = 0, total = 0, num = 0, h1 = null;
+
+    lines.forEach((raw, i) => {
+      let m;
+      if ((m = raw.match(RE_TASK))){
+        total++;
+        const checked = m[2].toLowerCase() === 'x';
+        if (checked) done++;
+        const deep = m[1].length >= 2;
+        if (!deep) num++;
+        const btn = document.createElement('button');
+        btn.className = 'task' + (deep ? ' sub' : '');
+        btn.type = 'button';
+        btn.setAttribute('aria-pressed', String(checked));
+        btn.innerHTML =
+          '<span class="idx">' + (deep ? '' : num) + '</span>' +
+          '<span class="tick"><svg viewBox="0 0 12 12"><path d="M2 6.3 4.6 9 10 3"/></svg></span>' +
+          '<span class="txt">' + inline(m[3]) + '</span>';
+        btn.addEventListener('click', () => toggle(i));
+        sheet.appendChild(btn);
+        return;
+      }
+      if ((m = raw.match(RE_HEAD))){
+        if (h1 === null && m[1].length === 1){ h1 = m[2]; return; }
+        const d = document.createElement('div');
+        d.className = 'head'; d.innerHTML = inline(m[2]);
+        sheet.appendChild(d); return;
+      }
+      if ((m = raw.match(RE_NOTE))){
+        const d = document.createElement('div');
+        d.className = 'note'; d.innerHTML = inline(m[2]);
+        sheet.appendChild(d); return;
+      }
+      if (raw.trim()){
+        const d = document.createElement('div');
+        d.className = 'note'; d.innerHTML = inline(raw.trim());
+        sheet.appendChild(d);
+      }
+    });
+
+    titleEl.textContent = h1 || 'Checklist';
+    document.title = (h1 || 'Checklist') + ' — ' + done + '/' + total;
+    countEl.textContent = done + ' / ' + total;
+    labelEl.textContent = total === 0 ? 'aucune case à cocher'
+                        : done === total ? 'terminé' : 'étapes faites';
+    fillEl.style.width = total ? (done/total*100) + '%' : '0%';
+    syncUrl();
+  }
+
+  function toggle(i){
+    lines[i] = lines[i].replace(RE_TASK, (_, sp, mark, txt) =>
+      sp + '- [' + (mark.toLowerCase()==='x' ? ' ' : 'x') + '] ' + txt);
+    render();
+    persist();
+  }
+
+  function syncUrl(){
+    const hash = '#c=' + pack(lines.join('\n'));
+    const full = location.origin + location.pathname + hash;
+    urlBox.value = full;
+    lenEl.textContent = full.length + ' caractères';
+    try { history.replaceState(null, '', hash); } catch(e){}
+  }
+
+  function persist(){
+    const text = lines.join('\n');
+    fp = fingerprint(text);
+    store.set(PREFIX + fp, JSON.stringify({md:text, at:Date.now()}));
+    store.set(LAST, fp);
+    if (view === 'lib') renderLib();
+  }
+
+  function load(text, save){
+    lines = text.replace(/\r\n?/g,'\n').split('\n');
+    fp = fingerprint(lines.join('\n'));
+    render();
+    if (save !== false) persist();
+  }
+
+  /* ---------- bibliothèque ---------- */
+  function renderLib(){
+    lib.innerHTML = '';
+    const items = store.keys().map(k => {
+      let rec; try { rec = JSON.parse(store.get(k)); } catch(e){ return null; }
+      if (!rec || typeof rec.md !== 'string') return null;
+      return Object.assign({key:k, id:k.slice(PREFIX.length)}, stats(rec.md), {md:rec.md, at:rec.at||0});
+    }).filter(Boolean).sort((a,b) => b.at - a.at);
+
+    if (!items.length){
+      lib.innerHTML = '<div class="empty">Aucune checklist mémorisée pour l\'instant.</div>';
+      return;
+    }
+
+    items.forEach(it => {
+      const row = document.createElement('div');
+      row.className = 'lib-row';
+
+      const open = document.createElement('button');
+      open.className = 'lib-open';
+      open.type = 'button';
+      const when = it.at ? new Date(it.at).toLocaleDateString('fr-FR',
+                    {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
+      open.innerHTML = '<span class="lib-name">' + esc(it.title) + '</span>' +
+        '<span class="lib-meta">' + it.done + '/' + it.total + ' · ' + when + '</span>';
+      open.addEventListener('click', () => { load(it.md); showView('list'); });
+      row.appendChild(open);
+
+      if (it.id === fp){
+        const tag = document.createElement('span');
+        tag.className = 'lib-cur'; tag.textContent = 'ouverte';
+        row.appendChild(tag);
+      }
+
+      const del = document.createElement('button');
+      del.className = 'lib-del'; del.type = 'button';
+      del.textContent = 'Supprimer';
+      del.setAttribute('aria-label', 'Supprimer ' + it.title);
+      del.addEventListener('click', () => {
+        if (del.dataset.armed !== '1'){
+          del.dataset.armed = '1';
+          del.textContent = 'Confirmer';
+          setTimeout(() => { del.dataset.armed=''; del.textContent='Supprimer'; }, 3000);
+          return;
+        }
+        store.del(it.key);
+        if (it.id === fp) store.del(LAST);
+        renderLib();
+      });
+      row.appendChild(del);
+
+      lib.appendChild(row);
+    });
+  }
+
+  /* ---------- vues ---------- */
+  function showView(v){
+    view = v;
+    sheet.classList.toggle('hidden', v !== 'list');
+    editor.classList.toggle('hidden', v !== 'edit');
+    lib.classList.toggle('hidden', v !== 'lib');
+    gauge.classList.toggle('hidden', v === 'lib');
+    strip.classList.toggle('hidden', v === 'lib');
+    $('toggleEdit').classList.toggle('is-on', v === 'edit');
+    $('toggleEdit').textContent = v === 'edit' ? 'Voir la checklist' : 'Modifier le texte';
+    $('toggleLib').classList.toggle('is-on', v === 'lib');
+    crumb.textContent = v === 'lib' ? 'sur cet appareil' : 'mémorisée sur cet appareil';
+    if (v === 'lib') renderLib();
+    if (v === 'edit'){ editor.value = lines.join('\n'); editor.focus(); }
+  }
+
+  /* ---------- conflit ---------- */
+  function askConflict(linkText, mineText){
+    pendingLink = linkText;
+    const a = stats(linkText), b = stats(mineText);
+    clashText.textContent =
+      'Le lien est à ' + a.done + '/' + a.total +
+      ', la version enregistrée ici est à ' + b.done + '/' + b.total +
+      '. Rien n\'est écrasé tant que tu n\'as pas choisi.';
+    clash.classList.remove('hidden');
+  }
+  function closeConflict(){ clash.classList.add('hidden'); pendingLink = null; }
+
+  $('takeLink').addEventListener('click', () => {
+    if (pendingLink !== null) load(pendingLink);
+    closeConflict();
+  });
+  $('keepMine').addEventListener('click', () => { closeConflict(); syncUrl(); });
+
+  /* ---------- contrôles ---------- */
+  $('toggleEdit').addEventListener('click', () => {
+    if (view === 'edit'){ load(editor.value); showView('list'); }
+    else showView('edit');
+  });
+
+  $('toggleLib').addEventListener('click', () => {
+    showView(view === 'lib' ? 'list' : 'lib');
+  });
+
+  $('newList').addEventListener('click', () => {
+    load('# Nouvelle checklist\n\n- [ ] Première étape\n- [ ] Deuxième étape');
+    showView('edit');
+  });
+
+  $('copy').addEventListener('click', async () => {
+    const btn = $('copy'), old = btn.textContent;
+    try { await navigator.clipboard.writeText(urlBox.value); btn.textContent = 'Lien copié'; }
+    catch(e){ urlBox.select(); btn.textContent = 'Sélectionné — Ctrl+C'; }
+    setTimeout(() => { btn.textContent = old; }, 1600);
+  });
+
+  $('reset').addEventListener('click', () => {
+    lines = lines.map(l => l.replace(RE_TASK, (_, sp, mk, tx) => sp + '- [ ] ' + tx));
+    render(); persist();
+  });
+
+  urlBox.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    const m = urlBox.value.match(/[#?&]c=([A-Za-z0-9_-]+)/);
+    if (!m){ urlBox.value = 'Lien non reconnu — il doit contenir #c=…'; return; }
+    let text;
+    try { text = unpack(m[1]); }
+    catch(err){ urlBox.value = 'Lien illisible — le code après #c= est incomplet'; return; }
+    arrive(text);
+  });
+
+  /* ---------- arrivée d'un lien ---------- */
+  function arrive(text){
+    const id = fingerprint(text);
+    const raw = store.get(PREFIX + id);
+    if (!raw){ load(text); showView('list'); return; }
+    let rec; try { rec = JSON.parse(raw); } catch(e){ load(text); showView('list'); return; }
+    if (rec.md === text){ load(text); showView('list'); return; }
+    load(rec.md, false);          // on garde la version locale par défaut
+    showView('list');
+    askConflict(text, rec.md);
+  }
+
+  /* ---------- démarrage ---------- */
+  memEl.textContent = persistent
+    ? 'Mémoire du navigateur active — la progression est conservée quand tu fermes la page.'
+    : 'Mémoire du navigateur indisponible ici : la progression ne survivra pas à la fermeture. Ouvre le fichier téléchargé pour l\'activer.';
+  memEl.classList.toggle('off', !persistent);
+
+  const fromUrl = location.hash.match(/[#&]c=([A-Za-z0-9_-]+)/);
+  if (fromUrl){
+    try { arrive(unpack(fromUrl[1])); }
+    catch(e){ load(DEFAULT); }
+  } else {
+    const last = store.get(LAST);
+    const raw = last ? store.get(PREFIX + last) : null;
+    if (raw){
+      try { load(JSON.parse(raw).md, false); fp = last; }
+      catch(e){ load(DEFAULT); }
+    } else {
+      load(DEFAULT);
+    }
+  }
+  showView('list');
+})();
+</script>
