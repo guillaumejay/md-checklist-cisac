@@ -145,6 +145,14 @@
   .mem{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:14px}
   .mem.off{color:var(--warn)}
 
+  .gist{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+  .gist-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .gist-token{flex:1;min-width:190px;padding:9px 11px;font-family:var(--mono);font-size:12px;
+    color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:7px}
+  .gist-token:focus{outline:2px solid var(--accent);outline-offset:1px}
+  .gist-status{margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .gist-status.error{color:var(--warn)}
+
   .hidden{display:none}
   @media (prefers-reduced-motion: reduce){*{transition:none !important}}
 </style>
@@ -194,6 +202,20 @@
     <input class="url" id="url" aria-label="Lien contenant la checklist et son état">
     <p class="hint" id="hint">Colle un lien ici et appuie sur Entrée pour l'importer.</p>
     <p class="mem" id="mem"></p>
+    <div class="gist">
+      <div class="strip-label"><span id="gistLabel">Sauvegarde GitHub Gist</span></div>
+      <div class="gist-row" id="gistSetup">
+        <input class="gist-token" id="gistToken" type="password" autocomplete="off" placeholder="github_pat_…">
+        <button class="btn" id="gistConnect">Créer la sauvegarde</button>
+      </div>
+      <div class="gist-row hidden" id="gistActions">
+        <button class="btn" id="gistSave">Sauvegarder maintenant</button>
+        <button class="btn" id="gistLoad">Restaurer</button>
+        <button class="btn" id="gistCopy">Copier le lien Gist</button>
+        <button class="btn danger" id="gistDisconnect">Déconnecter</button>
+      </div>
+      <p class="gist-status" id="gistStatus"></p>
+    </div>
   </div>
 
 </div>
@@ -226,6 +248,9 @@
 
   const PREFIX = 'mdck:';
   const LAST   = 'mdck!last';
+  const GIST_ID = 'mdck!gist-id';
+  const GIST_TOKEN = 'mdck!gist-token';
+  const GIST_FILE = 'md-checklist.json';
 
   const $ = id => document.getElementById(id);
   const sheet=$('sheet'), editor=$('editor'), lib=$('lib'), urlBox=$('url'),
@@ -308,6 +333,17 @@
       dateLocale: 'fr-FR',
       langBtn: 'EN',
       langAria: 'Switch to English',
+      gistLabel: 'Sauvegarde GitHub Gist', gistTokenAria: 'Token GitHub avec permission Gists',
+      gistConnect: 'Créer la sauvegarde', gistSave: 'Sauvegarder maintenant', gistLoad: 'Restaurer',
+      gistCopy: 'Copier le lien Gist', gistDisconnect: 'Déconnecter',
+      gistReady: 'Sauvegarde Gist connectée — synchronisation automatique active.',
+      gistIdle: 'Entre un token GitHub avec la permission Gists. Il restera stocké dans ce navigateur.',
+      gistSaving: 'Sauvegarde en cours…', gistSaved: 'Sauvegarde synchronisée.',
+      gistLoading: 'Restauration en cours…', gistLoaded: 'Sauvegarde restaurée.',
+      gistCopied: 'Lien Gist copié.', gistDisconnected: 'Sauvegarde Gist déconnectée.',
+      gistTokenMissing: 'Token GitHub manquant.',
+      gistBadData: 'Le Gist ne contient pas une sauvegarde md-checklist valide.',
+      gistError: msg => 'Erreur Gist : ' + msg,
     },
     en: {
       crumbList: 'saved on this device',
@@ -349,6 +385,17 @@
       dateLocale: 'en-US',
       langBtn: 'FR',
       langAria: 'Passer en français',
+      gistLabel: 'GitHub Gist backup', gistTokenAria: 'GitHub token with Gists permission',
+      gistConnect: 'Create backup', gistSave: 'Back up now', gistLoad: 'Restore',
+      gistCopy: 'Copy Gist link', gistDisconnect: 'Disconnect',
+      gistReady: 'Gist backup connected — automatic synchronization is active.',
+      gistIdle: 'Enter a GitHub token with Gists permission. It will remain stored in this browser.',
+      gistSaving: 'Backing up…', gistSaved: 'Backup synchronized.',
+      gistLoading: 'Restoring…', gistLoaded: 'Backup restored.',
+      gistCopied: 'Gist link copied.', gistDisconnected: 'Gist backup disconnected.',
+      gistTokenMissing: 'GitHub token missing.',
+      gistBadData: 'The Gist does not contain a valid md-checklist backup.',
+      gistError: msg => 'Gist error: ' + msg,
     },
   };
   let lang = store.get(LANG_KEY) === 'en' ? 'en' : 'fr';
@@ -484,6 +531,7 @@
     store.set(PREFIX + fp, JSON.stringify({md:text, at:Date.now()}));
     store.set(LAST, fp);
     if (view === 'lib') renderLib();
+    scheduleGistSave();
   }
 
   function load(text, save){
@@ -580,6 +628,86 @@
   }
   function closeConflict(){ clash.classList.add('hidden'); pendingLink = null; }
 
+  /* ---------- sauvegarde GitHub Gist ---------- */
+  let gistTimer = null;
+  let gistBusy = false;
+  let lastGistPayload = null;
+
+  function gistConfig(){ return {id:store.get(GIST_ID), token:store.get(GIST_TOKEN)}; }
+  function gistSnapshot(){
+    const lists = store.keys().map(key => {
+      try {
+        const value = JSON.parse(store.get(key));
+        return value && typeof value.md === 'string' ? {id:key.slice(PREFIX.length), md:value.md, at:value.at||0} : null;
+      } catch(e){ return null; }
+    }).filter(Boolean);
+    return {version:1, current:fp, lists:lists};
+  }
+  function validGistSnapshot(value){
+    return value && value.version === 1 && Array.isArray(value.lists) &&
+      value.lists.every(item => item && typeof item.id === 'string' && typeof item.md === 'string');
+  }
+  function gistMessage(message, error){
+    const el = $('gistStatus');
+    el.textContent = message;
+    el.classList.toggle('error', !!error);
+  }
+  function refreshGist(){
+    const linked = !!gistConfig().id;
+    $('gistSetup').classList.toggle('hidden', linked);
+    $('gistActions').classList.toggle('hidden', !linked);
+    if (!gistBusy) gistMessage(linked ? t().gistReady : t().gistIdle, false);
+  }
+  async function gistRequest(path, init){
+    let response;
+    try { response = await fetch('https://api.github.com/gists' + path, init); }
+    catch(e){ throw new Error('GitHub inaccessible'); }
+    if (!response.ok){
+      if (response.status === 401) throw new Error('token invalide');
+      if (response.status === 404) throw new Error('Gist introuvable');
+      throw new Error('HTTP ' + response.status);
+    }
+    return response.json();
+  }
+  function gistHeaders(token){
+    return {Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28',
+      Authorization:'Bearer ' + token,'Content-Type':'application/json'};
+  }
+  async function saveGist(force){
+    const cfg = gistConfig();
+    if (!cfg.id || !cfg.token || gistBusy) return;
+    const payload = JSON.stringify(gistSnapshot());
+    if (!force && payload === lastGistPayload) return;
+    gistBusy = true; gistMessage(t().gistSaving, false);
+    try {
+      await gistRequest('/' + encodeURIComponent(cfg.id), {method:'PATCH',headers:gistHeaders(cfg.token),
+        body:JSON.stringify({files:{[GIST_FILE]:{content:payload}}})});
+      lastGistPayload = payload; gistMessage(t().gistSaved, false);
+    } catch(e){ gistMessage(t().gistError(e.message), true); }
+    finally { gistBusy = false; }
+  }
+  function scheduleGistSave(){
+    clearTimeout(gistTimer);
+    if (!gistConfig().id || !gistConfig().token) return;
+    gistTimer = setTimeout(() => saveGist(false), 2000);
+  }
+  async function restoreGist(){
+    const cfg = gistConfig(); if (!cfg.id || gistBusy) return;
+    gistBusy = true; gistMessage(t().gistLoading, false);
+    try {
+      const gist = await gistRequest('/' + encodeURIComponent(cfg.id), {method:'GET',headers:{Accept:'application/vnd.github+json'}});
+      const file = gist.files && gist.files[GIST_FILE];
+      const snapshot = file && JSON.parse(file.content);
+      if (!validGistSnapshot(snapshot)) throw new Error(t().gistBadData);
+      store.keys().forEach(key => store.del(key));
+      snapshot.lists.forEach(item => store.set(PREFIX + item.id, JSON.stringify({md:item.md,at:item.at||0})));
+      const current = snapshot.lists.find(item => item.id === snapshot.current) || snapshot.lists[0];
+      if (current){ store.set(LAST,current.id); load(current.md, false); fp=current.id; }
+      lastGistPayload = JSON.stringify(snapshot);
+      showView('list'); gistMessage(t().gistLoaded, false);
+    } catch(e){ gistMessage(t().gistError(e.message), true); }
+    finally { gistBusy = false; }
+  }
   /* ---------- application de la langue ---------- */
   function applyLang(){
     document.documentElement.lang = lang;
@@ -653,6 +781,31 @@
     arrive(text);
   });
 
+  $('gistConnect').addEventListener('click', async () => {
+    const token = $('gistToken').value.trim();
+    if (!token){ gistMessage(t().gistTokenMissing, true); return; }
+    gistBusy = true; gistMessage(t().gistSaving, false);
+    try {
+      const payload = JSON.stringify(gistSnapshot());
+      const gist = await gistRequest('', {method:'POST',headers:gistHeaders(token),body:JSON.stringify({
+        description:'md-checklist — sauvegarde',public:false,files:{[GIST_FILE]:{content:payload}}
+      })});
+      store.set(GIST_ID,gist.id); store.set(GIST_TOKEN,token);
+      $('gistToken').value=''; lastGistPayload=payload;
+      gistBusy=false; refreshGist(); gistMessage(t().gistSaved, false);
+    } catch(e){ gistBusy=false; gistMessage(t().gistError(e.message), true); }
+  });
+  $('gistSave').addEventListener('click', () => saveGist(true));
+  $('gistLoad').addEventListener('click', restoreGist);
+  $('gistCopy').addEventListener('click', async () => {
+    const link='https://gist.github.com/' + gistConfig().id;
+    try { await navigator.clipboard.writeText(link); gistMessage(t().gistCopied, false); }
+    catch(e){ window.prompt(t().gistCopy, link); }
+  });
+  $('gistDisconnect').addEventListener('click', () => {
+    clearTimeout(gistTimer); store.del(GIST_ID); store.del(GIST_TOKEN); lastGistPayload=null;
+    refreshGist(); gistMessage(t().gistDisconnected, false);
+  });
   /* ---------- arrivée d'un lien ---------- */
   function arrive(text){
     const id = fingerprint(text);

@@ -21,7 +21,7 @@ où les cases à cocher ne cochent pas vraiment.
   survit à un rechargement de page.
 - Une session peut être **transmise à quelqu'un d'autre, ou à soi-même plus
   tard**, comme un simple lien, sans infrastructure derrière.
-- Rien ne quitte la machine.
+- Rien ne quitte la machine, sauf si la sauvegarde Gist optionnelle est activée.
 
 Non-objectifs : pas de collaboration, pas de synchronisation temps réel, pas
 de rappels, pas de dates d'échéance, pas d'app mobile, pas de comptes.
@@ -60,6 +60,18 @@ Les tâches de premier niveau sont numérotées, parce que ce sont en général 
 procédures ordonnées où « étape 3 » se dit à voix haute ; les sous-tâches ne le
 sont pas, ce sont des précisions plutôt que des étapes.
 
+## Sauvegarde GitHub Gist
+
+La section **Sauvegarde GitHub Gist** accepte un token GitHub autorisé à gérer
+les Gists. Elle crée un Gist secret contenant `md-checklist.json`, puis envoie
+automatiquement toute la bibliothèque locale deux secondes après chaque
+modification. Les boutons permettent aussi de forcer la sauvegarde, restaurer
+la bibliothèque, copier l’adresse du Gist ou déconnecter le navigateur.
+
+Le token et l’identifiant du Gist restent dans `localStorage`. Le token n’est
+jamais inclus dans le Gist ni dans le lien copié, mais il demeure lisible par
+les scripts exécutés sur la même origine : cette fonction est destinée à un
+outil personnel.
 ## Limitations connues
 
 - **Doublons dans la bibliothèque.** Modifier le texte d'une tâche change son
@@ -75,7 +87,7 @@ sont pas, ce sont des précisions plutôt que des étapes.
 ## Contraintes
 
 Fichier unique, zéro dépendance, pas de build. Fonctionne hors-ligne et depuis
-`file://`. Pas de CDN, pas de fetch. Dégrade proprement si `localStorage` est
+`file://`. Pas de CDN ; seul l’appel optionnel à l’API GitHub Gist requiert le réseau. Dégrade proprement si `localStorage` est
 indisponible (iframe sandboxée, navigation privée).
 
 ## Licence
