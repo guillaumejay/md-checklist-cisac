@@ -56,15 +56,6 @@
   .btn.is-on{background:var(--ink);color:var(--card);border-color:var(--ink)}
   .btn.danger{color:var(--warn)}
 
-  /* conflit */
-  .clash{
-    background:var(--warn-soft);border:1px solid #E4CE9E;border-radius:10px;
-    padding:14px 16px;margin-bottom:16px;
-  }
-  .clash h2{margin:0 0 4px;font-size:14px;font-weight:650;color:var(--warn)}
-  .clash p{margin:0 0 12px;font-size:14px;color:#6B4A11}
-  .clash-acts{display:flex;gap:8px;flex-wrap:wrap}
-
   .sheet{background:var(--card);border:1px solid var(--line);
     border-radius:10px;padding:6px 0}
 
@@ -112,25 +103,6 @@
   }
   textarea:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:transparent}
 
-  /* bibliothèque */
-  .lib{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
-  .lib-row{display:flex;align-items:center;gap:12px;padding:12px 16px;
-    border-bottom:1px solid var(--line-soft)}
-  .lib-row:last-child{border-bottom:0}
-  .lib-open{flex:1;text-align:left;border:0;background:none;font:inherit;
-    color:inherit;cursor:pointer;padding:0;border-radius:4px}
-  .lib-open:hover .lib-name{color:var(--accent)}
-  .lib-open:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
-  .lib-name{font-weight:600;font-size:15px;display:block}
-  .lib-meta{font-family:var(--mono);font-size:11px;color:var(--muted)}
-  .lib-cur{font-family:var(--mono);font-size:10px;letter-spacing:.06em;
-    text-transform:uppercase;color:var(--accent);border:1px solid var(--accent);
-    border-radius:4px;padding:1px 5px}
-  .lib-del{border:0;background:none;color:var(--muted);cursor:pointer;
-    font-family:var(--mono);font-size:12px;padding:4px 6px;border-radius:5px}
-  .lib-del:hover{color:var(--warn);background:var(--warn-soft)}
-  .empty{padding:24px 16px;color:var(--muted);font-size:14px}
-
   .strip{margin-top:22px;padding-top:14px;border-top:1px dashed var(--line)}
   .strip-label{font-family:var(--mono);font-size:11px;letter-spacing:0.08em;
     text-transform:uppercase;color:var(--muted);margin-bottom:7px;
@@ -172,46 +144,25 @@
     <div class="gauge-track"><div class="gauge-fill" id="fill"></div></div>
   </div>
 
-  <div class="clash hidden" id="clash">
-    <h2 id="clashTitle">Ce lien contient une progression différente</h2>
-    <p id="clashText"></p>
-    <div class="clash-acts">
-      <button class="btn" id="takeLink">Charger le lien</button>
-      <button class="btn is-on" id="keepMine">Garder ma version</button>
-    </div>
-  </div>
-
   <div class="bar">
     <button class="btn" id="toggleEdit">Modifier le texte</button>
-    <button class="btn" id="copy">Copier le lien</button>
     <button class="btn" id="reset">Tout décocher</button>
-    <button class="btn" id="toggleLib">Mes checklists</button>
-    <button class="btn" id="newList">Nouvelle</button>
     <button class="btn" id="toggleLang">EN</button>
   </div>
 
   <div class="sheet" id="sheet"></div>
   <textarea id="editor" class="hidden" spellcheck="false" aria-label="Source markdown"></textarea>
-  <div class="lib hidden" id="lib"></div>
-
   <div class="strip" id="strip">
-    <div class="strip-label">
-      <span id="exportLabel">Lien d'export</span>
-      <span id="len"></span>
-    </div>
-    <input class="url" id="url" aria-label="Lien contenant la checklist et son état">
-    <p class="hint" id="hint">Colle un lien ici et appuie sur Entrée pour l'importer.</p>
-    <p class="mem" id="mem"></p>
     <div class="gist">
-      <div class="strip-label"><span id="gistLabel">Sauvegarde GitHub Gist</span></div>
+      <div class="strip-label"><span id="gistLabel">Stockage GitHub Gist</span></div>
       <div class="gist-row" id="gistSetup">
         <input class="gist-token" id="gistToken" type="password" autocomplete="off" placeholder="github_pat_…">
-        <button class="btn" id="gistConnect">Créer la sauvegarde</button>
+        <button class="btn" id="gistConnect">Créer le Gist</button>
       </div>
       <div class="gist-row hidden" id="gistActions">
         <button class="btn" id="gistSave">Sauvegarder maintenant</button>
-        <button class="btn" id="gistLoad">Restaurer</button>
-        <button class="btn" id="gistCopy">Copier le lien Gist</button>
+        <button class="btn" id="gistLoad">Rafraîchir</button>
+        <button class="btn" id="gistCopy">Copier le lien de partage</button>
         <button class="btn danger" id="gistDisconnect">Déconnecter</button>
       </div>
       <p class="gist-status" id="gistStatus"></p>
@@ -246,22 +197,19 @@
 - [ ] Firmware UDR7 à jour
 - [ ] Firmware des deux U7 Lite à jour`;
 
-  const PREFIX = 'mdck:';
-  const LAST   = 'mdck!last';
   const GIST_ID = 'mdck!gist-id';
   const GIST_TOKEN = 'mdck!gist-token';
   const GIST_FILE = 'md-checklist.json';
 
   const $ = id => document.getElementById(id);
-  const sheet=$('sheet'), editor=$('editor'), lib=$('lib'), urlBox=$('url'),
+  const sheet=$('sheet'), editor=$('editor'),
         countEl=$('count'), labelEl=$('countLabel'), fillEl=$('fill'),
-        lenEl=$('len'), titleEl=$('title'), crumb=$('crumb'), memEl=$('mem'),
-        gauge=$('gauge'), strip=$('strip'), clash=$('clash'), clashText=$('clashText');
+        titleEl=$('title'), crumb=$('crumb'),
+        gauge=$('gauge'), strip=$('strip');
 
   let lines = [];
   let fp = null;
-  let view = 'list';            // list | edit | lib
-  let pendingLink = null;       // texte du lien en attente d'arbitrage
+  let view = 'list';            // list | edit
 
   /* ---------- stockage : localStorage, sinon mémoire volatile ---------- */
   const mem = new Map();
@@ -281,12 +229,6 @@
     },
     del(k){
       try { persistent ? localStorage.removeItem(k) : mem.delete(k); } catch(e){}
-    },
-    keys(){
-      try {
-        const src = persistent ? Object.keys(localStorage) : [...mem.keys()];
-        return src.filter(k => k.indexOf(PREFIX) === 0);
-      } catch(e){ return []; }
     }
   };
 
@@ -294,7 +236,7 @@
   const LANG_KEY = 'mdck!lang';
   const STR = {
     fr: {
-      crumbList: 'mémorisée sur cet appareil',
+      crumbList: 'synchronisée avec GitHub Gist',
       crumbLib: 'sur cet appareil',
       labelNone: 'aucune case à cocher',
       labelDone: 'terminé',
@@ -324,8 +266,6 @@
       delConfirm: 'Confirmer',
       delLabel: 'Supprimer',
       delAria: name => 'Supprimer ' + name,
-      linkBad: 'Lien non reconnu — il doit contenir #c=…',
-      linkBroken: 'Lien illisible — le code après #c= est incomplet',
       charCount: n => n + ' caractères',
       untitled: 'Sans titre',
       checklist: 'Checklist',
@@ -333,20 +273,21 @@
       dateLocale: 'fr-FR',
       langBtn: 'EN',
       langAria: 'Switch to English',
-      gistLabel: 'Sauvegarde GitHub Gist', gistTokenAria: 'Token GitHub avec permission Gists',
-      gistConnect: 'Créer la sauvegarde', gistSave: 'Sauvegarder maintenant', gistLoad: 'Restaurer',
-      gistCopy: 'Copier le lien Gist', gistDisconnect: 'Déconnecter',
-      gistReady: 'Sauvegarde Gist connectée — synchronisation automatique active.',
-      gistIdle: 'Entre un token GitHub avec la permission Gists. Il restera stocké dans ce navigateur.',
+      gistLabel: 'Stockage GitHub Gist', gistTokenAria: 'Token GitHub avec permission Gists',
+      gistConnect: 'Créer le Gist', gistSave: 'Sauvegarder maintenant', gistLoad: 'Rafraîchir',
+      gistCopy: 'Copier le lien de partage', gistDisconnect: 'Déconnecter',
+      gistReady: 'Accès complet — synchronisation automatique active.',
+      gistReadonly: 'Lecture seule — les modifications sont désactivées.',
+      gistIdle: 'Entre un token GitHub avec la permission Gists pour créer la checklist.',
       gistSaving: 'Sauvegarde en cours…', gistSaved: 'Sauvegarde synchronisée.',
       gistLoading: 'Restauration en cours…', gistLoaded: 'Sauvegarde restaurée.',
-      gistCopied: 'Lien Gist copié.', gistDisconnected: 'Sauvegarde Gist déconnectée.',
+      gistCopied: 'Lien copié.', gistDisconnected: 'Gist déconnecté.',
       gistTokenMissing: 'Token GitHub manquant.',
       gistBadData: 'Le Gist ne contient pas une sauvegarde md-checklist valide.',
       gistError: msg => 'Erreur Gist : ' + msg,
     },
     en: {
-      crumbList: 'saved on this device',
+      crumbList: 'synchronized with GitHub Gist',
       crumbLib: 'on this device',
       labelNone: 'no items to check',
       labelDone: 'done',
@@ -376,8 +317,6 @@
       delConfirm: 'Confirm',
       delLabel: 'Delete',
       delAria: name => 'Delete ' + name,
-      linkBad: 'Link not recognised — it must contain #c=…',
-      linkBroken: 'Unreadable link — the code after #c= is incomplete',
       charCount: n => n + ' characters',
       untitled: 'Untitled',
       checklist: 'Checklist',
@@ -385,14 +324,15 @@
       dateLocale: 'en-US',
       langBtn: 'FR',
       langAria: 'Passer en français',
-      gistLabel: 'GitHub Gist backup', gistTokenAria: 'GitHub token with Gists permission',
-      gistConnect: 'Create backup', gistSave: 'Back up now', gistLoad: 'Restore',
-      gistCopy: 'Copy Gist link', gistDisconnect: 'Disconnect',
-      gistReady: 'Gist backup connected — automatic synchronization is active.',
-      gistIdle: 'Enter a GitHub token with Gists permission. It will remain stored in this browser.',
+      gistLabel: 'GitHub Gist storage', gistTokenAria: 'GitHub token with Gists permission',
+      gistConnect: 'Create Gist', gistSave: 'Save now', gistLoad: 'Refresh',
+      gistCopy: 'Copy sharing link', gistDisconnect: 'Disconnect',
+      gistReady: 'Full access — automatic synchronization is active.',
+      gistReadonly: 'Read only — editing is disabled.',
+      gistIdle: 'Enter a GitHub token with Gists permission to create the checklist.',
       gistSaving: 'Backing up…', gistSaved: 'Backup synchronized.',
       gistLoading: 'Restoring…', gistLoaded: 'Backup restored.',
-      gistCopied: 'Gist link copied.', gistDisconnected: 'Gist backup disconnected.',
+      gistCopied: 'Link copied.', gistDisconnected: 'Gist disconnected.',
       gistTokenMissing: 'GitHub token missing.',
       gistBadData: 'The Gist does not contain a valid md-checklist backup.',
       gistError: msg => 'Gist error: ' + msg,
@@ -474,6 +414,7 @@
         const btn = document.createElement('button');
         btn.className = 'task' + (deep ? ' sub' : '');
         btn.type = 'button';
+        btn.disabled = isReadonly();
         btn.setAttribute('aria-pressed', String(checked));
         btn.innerHTML =
           '<span class="idx">' + (deep ? '' : num) + '</span>' +
@@ -511,6 +452,7 @@
   }
 
   function toggle(i){
+    if (isReadonly()) return;
     lines[i] = lines[i].replace(RE_TASK, (_, sp, mark, txt) =>
       sp + '- [' + (mark.toLowerCase()==='x' ? ' ' : 'x') + '] ' + txt);
     render();
@@ -518,19 +460,12 @@
   }
 
   function syncUrl(){
-    const hash = '#c=' + pack(lines.join('\n'));
-    const full = location.href.replace(/#.*$/, '') + hash;
-    urlBox.value = full;
-    lenEl.textContent = t().charCount(full.length);
-    try { history.replaceState(null, '', hash); } catch(e){}
+    // The URL identifies the Gist; checklist content never travels in it.
   }
 
   function persist(){
     const text = lines.join('\n');
     fp = fingerprint(text);
-    store.set(PREFIX + fp, JSON.stringify({md:text, at:Date.now()}));
-    store.set(LAST, fp);
-    if (view === 'lib') renderLib();
     scheduleGistSave();
   }
 
@@ -538,95 +473,25 @@
     lines = text.replace(/\r\n?/g,'\n').split('\n');
     fp = fingerprint(lines.join('\n'));
     render();
-    if (save !== false) persist();
-  }
-
-  /* ---------- bibliothèque ---------- */
-  function renderLib(){
-    lib.innerHTML = '';
-    const items = store.keys().map(k => {
-      let rec; try { rec = JSON.parse(store.get(k)); } catch(e){ return null; }
-      if (!rec || typeof rec.md !== 'string') return null;
-      return Object.assign({key:k, id:k.slice(PREFIX.length)}, stats(rec.md), {md:rec.md, at:rec.at||0});
-    }).filter(Boolean).sort((a,b) => b.at - a.at);
-
-    if (!items.length){
-      lib.innerHTML = '<div class="empty">' + esc(t().libEmpty) + '</div>';
-      return;
-    }
-
-    items.forEach(it => {
-      const row = document.createElement('div');
-      row.className = 'lib-row';
-
-      const open = document.createElement('button');
-      open.className = 'lib-open';
-      open.type = 'button';
-      const when = it.at ? new Date(it.at).toLocaleDateString(t().dateLocale,
-                    {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
-      open.innerHTML = '<span class="lib-name">' + esc(it.title) + '</span>' +
-        '<span class="lib-meta">' + it.done + '/' + it.total + ' · ' + when + '</span>';
-      open.addEventListener('click', () => { load(it.md); showView('list'); });
-      row.appendChild(open);
-
-      if (it.id === fp){
-        const tag = document.createElement('span');
-        tag.className = 'lib-cur'; tag.textContent = t().libCurrent;
-        row.appendChild(tag);
-      }
-
-      const del = document.createElement('button');
-      del.className = 'lib-del'; del.type = 'button';
-      del.textContent = t().delLabel;
-      del.setAttribute('aria-label', t().delAria(it.title));
-      del.addEventListener('click', () => {
-        if (del.dataset.armed !== '1'){
-          del.dataset.armed = '1';
-          del.textContent = t().delConfirm;
-          setTimeout(() => { del.dataset.armed=''; del.textContent=t().delLabel; }, 3000);
-          return;
-        }
-        store.del(it.key);
-        if (it.id === fp) store.del(LAST);
-        renderLib();
-      });
-      row.appendChild(del);
-
-      lib.appendChild(row);
-    });
+    if (save !== false && !isReadonly()) persist();
   }
 
   /* ---------- vues ---------- */
   function refreshChrome(){
     $('toggleEdit').classList.toggle('is-on', view === 'edit');
     $('toggleEdit').textContent = view === 'edit' ? t().viewList : t().editText;
-    $('toggleLib').classList.toggle('is-on', view === 'lib');
-    crumb.textContent = view === 'lib' ? t().crumbLib : t().crumbList;
+    crumb.textContent = isReadonly() ? t().gistReadonly : (gistConfig().id ? t().crumbList : t().gistIdle);
   }
 
   function showView(v){
     view = v;
     sheet.classList.toggle('hidden', v !== 'list');
     editor.classList.toggle('hidden', v !== 'edit');
-    lib.classList.toggle('hidden', v !== 'lib');
-    gauge.classList.toggle('hidden', v === 'lib');
-    strip.classList.toggle('hidden', v === 'lib');
+    gauge.classList.remove('hidden');
+    strip.classList.remove('hidden');
     refreshChrome();
-    if (v === 'lib') renderLib();
     if (v === 'edit'){ editor.value = lines.join('\n'); editor.focus(); }
   }
-
-  /* ---------- conflit ---------- */
-  function updateClashText(){
-    if (pendingLink === null) return;
-    clashText.textContent = t().clashText(stats(pendingLink), stats(lines.join('\n')));
-  }
-  function askConflict(linkText){
-    pendingLink = linkText;
-    updateClashText();
-    clash.classList.remove('hidden');
-  }
-  function closeConflict(){ clash.classList.add('hidden'); pendingLink = null; }
 
   /* ---------- sauvegarde GitHub Gist ---------- */
   let gistTimer = null;
@@ -634,18 +499,12 @@
   let lastGistPayload = null;
 
   function gistConfig(){ return {id:store.get(GIST_ID), token:store.get(GIST_TOKEN)}; }
+  function isReadonly(){ const cfg=gistConfig(); return !!cfg.id && !cfg.token; }
   function gistSnapshot(){
-    const lists = store.keys().map(key => {
-      try {
-        const value = JSON.parse(store.get(key));
-        return value && typeof value.md === 'string' ? {id:key.slice(PREFIX.length), md:value.md, at:value.at||0} : null;
-      } catch(e){ return null; }
-    }).filter(Boolean);
-    return {version:1, current:fp, lists:lists};
+    return {version:2, md:lines.join('\n'), updatedAt:new Date().toISOString()};
   }
   function validGistSnapshot(value){
-    return value && value.version === 1 && Array.isArray(value.lists) &&
-      value.lists.every(item => item && typeof item.id === 'string' && typeof item.md === 'string');
+    return value && value.version === 2 && typeof value.md === 'string';
   }
   function gistMessage(message, error){
     const el = $('gistStatus');
@@ -653,17 +512,25 @@
     el.classList.toggle('error', !!error);
   }
   function refreshGist(){
-    const linked = !!gistConfig().id;
+    const cfg = gistConfig(), linked = !!cfg.id, readonly = linked && !cfg.token;
     $('gistSetup').classList.toggle('hidden', linked);
     $('gistActions').classList.toggle('hidden', !linked);
-    if (!gistBusy) gistMessage(linked ? t().gistReady : t().gistIdle, false);
+    $('gistSave').classList.toggle('hidden', readonly);
+    $('toggleEdit').disabled = readonly;
+    $('reset').disabled = readonly;
+    crumb.textContent = readonly ? t().gistReadonly : (linked ? t().crumbList : t().gistIdle);
+    if (!gistBusy) gistMessage(linked ? (readonly ? t().gistReadonly : t().gistReady) : t().gistIdle, false);
   }
   async function gistRequest(path, init){
     let response;
     try { response = await fetch('https://api.github.com/gists' + path, init); }
     catch(e){ throw new Error('GitHub inaccessible'); }
     if (!response.ok){
-      if (response.status === 401) throw new Error('token invalide');
+      if (response.status === 401 || response.status === 403){
+        const error = new Error('token invalide ou accès refusé');
+        error.auth = true;
+        throw error;
+      }
       if (response.status === 404) throw new Error('Gist introuvable');
       throw new Error('HTTP ' + response.status);
     }
@@ -683,7 +550,10 @@
       await gistRequest('/' + encodeURIComponent(cfg.id), {method:'PATCH',headers:gistHeaders(cfg.token),
         body:JSON.stringify({files:{[GIST_FILE]:{content:payload}}})});
       lastGistPayload = payload; gistMessage(t().gistSaved, false);
-    } catch(e){ gistMessage(t().gistError(e.message), true); }
+    } catch(e){
+      if (e.auth){ store.del(GIST_TOKEN); refreshGist(); }
+      gistMessage(t().gistError(e.message), true);
+    }
     finally { gistBusy = false; }
   }
   function scheduleGistSave(){
@@ -699,10 +569,7 @@
       const file = gist.files && gist.files[GIST_FILE];
       const snapshot = file && JSON.parse(file.content);
       if (!validGistSnapshot(snapshot)) throw new Error(t().gistBadData);
-      store.keys().forEach(key => store.del(key));
-      snapshot.lists.forEach(item => store.set(PREFIX + item.id, JSON.stringify({md:item.md,at:item.at||0})));
-      const current = snapshot.lists.find(item => item.id === snapshot.current) || snapshot.lists[0];
-      if (current){ store.set(LAST,current.id); load(current.md, false); fp=current.id; }
+      load(snapshot.md, false);
       lastGistPayload = JSON.stringify(snapshot);
       showView('list'); gistMessage(t().gistLoaded, false);
     } catch(e){ gistMessage(t().gistError(e.message), true); }
@@ -714,43 +581,24 @@
     const langBtn = $('toggleLang');
     langBtn.textContent = t().langBtn;
     langBtn.setAttribute('aria-label', t().langAria);
-    $('copy').textContent = t().copyLink;
     $('reset').textContent = t().uncheckAll;
-    $('toggleLib').textContent = t().myLists;
-    $('newList').textContent = t().newList;
-    $('takeLink').textContent = t().takeLink;
-    $('keepMine').textContent = t().keepMine;
-    $('clashTitle').textContent = t().clashTitle;
-    $('exportLabel').textContent = t().exportLabel;
-    $('hint').textContent = t().hint;
-    urlBox.setAttribute('aria-label', t().urlAria);
     editor.setAttribute('aria-label', t().editorAria);
-    memEl.textContent = persistent ? t().memOn : t().memOff;
+    $('gistLabel').textContent = t().gistLabel;
+    $('gistConnect').textContent = t().gistConnect;
+    $('gistSave').textContent = t().gistSave;
+    $('gistLoad').textContent = t().gistLoad;
+    $('gistCopy').textContent = t().gistCopy;
+    $('gistDisconnect').textContent = t().gistDisconnect;
+    $('gistToken').setAttribute('aria-label', t().gistTokenAria);
     refreshChrome();
-    updateClashText();
     render();
-    if (view === 'lib') renderLib();
+    refreshGist();
   }
-
-  $('takeLink').addEventListener('click', () => {
-    if (pendingLink !== null) load(pendingLink);
-    closeConflict();
-  });
-  $('keepMine').addEventListener('click', () => { closeConflict(); syncUrl(); });
 
   /* ---------- contrôles ---------- */
   $('toggleEdit').addEventListener('click', () => {
     if (view === 'edit'){ load(editor.value); showView('list'); }
     else showView('edit');
-  });
-
-  $('toggleLib').addEventListener('click', () => {
-    showView(view === 'lib' ? 'list' : 'lib');
-  });
-
-  $('newList').addEventListener('click', () => {
-    load(t().newListSeed);
-    showView('edit');
   });
 
   $('toggleLang').addEventListener('click', () => {
@@ -759,26 +607,9 @@
     applyLang();
   });
 
-  $('copy').addEventListener('click', async () => {
-    const btn = $('copy'), old = btn.textContent;
-    try { await navigator.clipboard.writeText(urlBox.value); btn.textContent = t().linkCopied; }
-    catch(e){ urlBox.select(); btn.textContent = t().linkSelected; }
-    setTimeout(() => { btn.textContent = old; }, 1600);
-  });
-
   $('reset').addEventListener('click', () => {
     lines = lines.map(l => l.replace(RE_TASK, (_, sp, mk, tx) => sp + '- [ ] ' + tx));
     render(); persist();
-  });
-
-  urlBox.addEventListener('keydown', e => {
-    if (e.key !== 'Enter') return;
-    const m = urlBox.value.match(/[#?&]c=([A-Za-z0-9_-]+)/);
-    if (!m){ urlBox.value = t().linkBad; return; }
-    let text;
-    try { text = unpack(m[1]); }
-    catch(err){ urlBox.value = t().linkBroken; return; }
-    arrive(text);
   });
 
   $('gistConnect').addEventListener('click', async () => {
@@ -791,51 +622,41 @@
         description:'md-checklist — sauvegarde',public:false,files:{[GIST_FILE]:{content:payload}}
       })});
       store.set(GIST_ID,gist.id); store.set(GIST_TOKEN,token);
+      try { history.replaceState(null, '', '#gist=' + encodeURIComponent(gist.id)); } catch(e){}
       $('gistToken').value=''; lastGistPayload=payload;
       gistBusy=false; refreshGist(); gistMessage(t().gistSaved, false);
     } catch(e){ gistBusy=false; gistMessage(t().gistError(e.message), true); }
   });
   $('gistSave').addEventListener('click', () => saveGist(true));
   $('gistLoad').addEventListener('click', restoreGist);
-  $('gistCopy').addEventListener('click', async () => {
-    const link='https://gist.github.com/' + gistConfig().id;
+  function appLink(){
+    const cfg=gistConfig(), base=location.href.replace(/#.*$/, '');
+    return base + '#gist=' + encodeURIComponent(cfg.id) + '&mode=read';
+  }
+  async function copyGistLink(){
+    const link=appLink();
     try { await navigator.clipboard.writeText(link); gistMessage(t().gistCopied, false); }
     catch(e){ window.prompt(t().gistCopy, link); }
-  });
+  }
+  $('gistCopy').addEventListener('click', copyGistLink);
   $('gistDisconnect').addEventListener('click', () => {
     clearTimeout(gistTimer); store.del(GIST_ID); store.del(GIST_TOKEN); lastGistPayload=null;
+    try { history.replaceState(null, '', location.href.replace(/#.*$/, '')); } catch(e){}
     refreshGist(); gistMessage(t().gistDisconnected, false);
   });
-  /* ---------- arrivée d'un lien ---------- */
-  function arrive(text){
-    const id = fingerprint(text);
-    const raw = store.get(PREFIX + id);
-    if (!raw){ load(text); showView('list'); return; }
-    let rec; try { rec = JSON.parse(raw); } catch(e){ load(text); showView('list'); return; }
-    if (rec.md === text){ load(text); showView('list'); return; }
-    load(rec.md, false);          // on garde la version locale par défaut
-    showView('list');
-    askConflict(text);
-  }
-
   /* ---------- démarrage ---------- */
-  memEl.classList.toggle('off', !persistent);
-
-  const fromUrl = location.hash.match(/[#&]c=([A-Za-z0-9_-]+)/);
-  if (fromUrl){
-    try { arrive(unpack(fromUrl[1])); }
-    catch(e){ load(DEFAULT); }
-  } else {
-    const last = store.get(LAST);
-    const raw = last ? store.get(PREFIX + last) : null;
-    if (raw){
-      try { load(JSON.parse(raw).md, false); fp = last; }
-      catch(e){ load(DEFAULT); }
-    } else {
-      load(DEFAULT);
-    }
+  const linkParams = new URLSearchParams(location.hash.replace(/^#/, ''));
+  const linkedId = linkParams.get('gist');
+  if (linkedId){
+    store.set(GIST_ID, linkedId);
+    if (linkParams.get('mode') === 'read') store.del(GIST_TOKEN);
   }
+  load(DEFAULT, false);
   showView('list');
   applyLang();
+  if (gistConfig().id) restoreGist();
+  setInterval(() => {
+    if (isReadonly() && document.visibilityState !== 'hidden') restoreGist();
+  }, 30000);
 })();
 </script>
