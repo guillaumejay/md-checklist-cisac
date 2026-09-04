@@ -1,69 +1,100 @@
 # md-checklist
 
-Une checklist Markdown en un seul fichier HTML. Tu écris du Markdown, tu coches
-des cases, et l’état est conservé dans un Gist GitHub secret, sans backend ni
-build.
+A dependency-free Markdown checklist library backed by secret GitHub Gists. Write a small
+checklist in Markdown, tick items in the browser, and share a read-only live
+view without running an application server.
 
-Ouvre `checklist.html` dans un navigateur. L’interface est disponible en
-français et en anglais.
+The interface is available in English and French. Open `index.html` directly
+to run it locally.
 
-## Déploiement sur Vercel
+## How it works
 
-Le dépôt est prêt à être publié comme site statique : importe-le dans Vercel,
-choisis **Other** comme framework et laisse les commandes de build ainsi que le
-répertoire de sortie vides. `vercel.json` sert `checklist.html` à la racine.
+- The home page keeps a local index of multiple checklists.
+- The owner enters one GitHub token used to manage all their Gists.
+- md-checklist creates a secret Gist containing `md-checklist.json`.
+- The complete Markdown source, including checkbox state, is saved two seconds
+  after each change.
+- The sharing link contains only the Gist ID and opens the checklist in
+  read-only mode.
+- A read-only page refreshes the Gist every 30 seconds while its tab is visible.
+- Editing remains available only in the owner's browser, where the token is
+  stored locally.
+- Existing md-checklist Gists can be added by ID, Gist URL, or sharing link.
+- `localStorage` contains only the local Gist index, owner token, and language setting.
+  The checklist itself lives only in the Gist.
 
-## Comment ça marche
+A network failure never blocks local interaction. The owner can retry a save
+manually after connectivity returns.
 
-- Le propriétaire saisit un token GitHub autorisé à gérer les Gists. L’app crée
-  un Gist secret contenant `md-checklist.json`.
-- Le Markdown complet, cases cochées comprises, est envoyé au Gist deux secondes
-  après chaque modification.
-- Le lien de partage contient uniquement l’identifiant du Gist et ouvre la
-  checklist en lecture seule. Il rafraîchit les données toutes les 30 secondes
-  lorsque l’onglet est visible.
-- L’écriture reste réservée au navigateur du propriétaire, qui conserve le
-  token localement.
-- `localStorage` conserve uniquement la configuration locale — identifiant du
-  Gist, token et langue — jamais la checklist elle-même.
+## GitHub token
 
-Une erreur réseau n’empêche jamais le propriétaire de continuer à modifier la
-checklist ; la sauvegarde peut être relancée manuellement.
+Create a dedicated, revocable GitHub token with permission to manage Gists,
+then paste it into md-checklist. The token is never added to the Gist or to a
+sharing link. It is stored as plain text in `localStorage` on the owner's
+browser, so this tool should be used only on a trusted device.
 
-## Pourquoi
+Anyone who receives a sharing link can read the secret Gist because possession
+of its unguessable ID grants read access. They cannot tick items, edit the
+Markdown, or save changes.
 
-La liste reste écrite en Markdown, mais devient directement exécutable et
-partageable sans compte applicatif ni serveur dédié. Le Gist est la source de
-vérité : le lien indique où le trouver au lieu d’embarquer une copie figée de
-son contenu.
+## Deploy to Vercel
 
-## Design et grammaire
+The included `vercel.json` serves `index.html` from the deployment root.
 
-L’interface utilise un gris papier froid, une encre marine et un accent
-bleu-vert réservé à la complétion et au focus. La grammaire Markdown reste
-volontairement petite : titres ATX, tâches, puces simples, `code`, **gras** et
-liens, avec une imbrication par deux espaces.
+1. Fork or push this repository to your GitHub account.
+2. Sign in to [Vercel](https://vercel.com/) and select **Add New → Project**.
+3. Import the `md-checklist` repository.
+4. Set **Framework Preset** to **Other**.
+5. Leave the **Build Command** empty.
+6. Leave the **Output Directory** empty so Vercel serves the repository root.
+7. Deploy the project.
 
-## Sécurité du token
+Every subsequent push to the connected branch creates a new deployment. No
+packages, environment variables, or server functions are required. Vercel's
+documentation confirms that static HTML/CSS/JavaScript projects can skip the
+build step: [Configuring a Build](https://vercel.com/docs/builds/configure-a-build).
 
-Le token n’est jamais inclus dans le Gist, les liens de partage, le DOM, les
-logs ou les erreurs. Il est stocké en clair dans `localStorage` uniquement sur
-le navigateur du propriétaire. Préfère un token dédié et révocable, limité aux
-Gists.
+## Deploy to GitHub Pages
 
-## Limitations connues
+Yes, md-checklist also works on GitHub Pages. It is a static HTML application,
+uses relative paths, and supports project-site URLs such as
+`https://USERNAME.github.io/md-checklist/`.
 
-- **Un seul rédacteur.** Le partage est toujours en lecture seule.
-- **Pas d’export `.md`.** Copier le texte depuis la vue édition reste possible.
-- **Réseau requis.** Le fichier s’ouvre depuis `file://`, mais lire ou écrire le
-  Gist nécessite un accès à l’API GitHub.
+1. Open the repository on GitHub.
+2. Go to **Settings → Pages**.
+3. Under **Build and deployment**, choose **Deploy from a branch**.
+4. Select the `main` branch and the `/(root)` folder, then click **Save**.
+5. Wait for the Pages deployment to finish.
+6. Open `https://USERNAME.github.io/md-checklist/`, replacing
+   `USERNAME` with your GitHub username.
 
-## Contraintes
+GitHub Pages expects an `index.html`, `index.md`, or `README.md` at the root of
+the publishing source. This repository now includes `index.html`, so the
+application opens directly from the project-site root.
+See GitHub's guides for [configuring a publishing source](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site)
+and [entry-file requirements](https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-github-pages-site).
 
-Fichier unique, zéro dépendance, pas de build et pas de CDN. `fetch` est utilisé
-uniquement pour l’API GitHub Gist. Les accès à `localStorage` restent protégés
-par un fallback mémoire lorsqu’ils échouent.
+## Design and Markdown grammar
 
-## Licence
+The interface uses a cold paper grey, navy ink, and a blue-green accent reserved
+for completion and focus. Its intentionally small Markdown grammar supports ATX
+headings, task items, plain bullets, inline `code`, **bold text**, links, and
+two-space nesting.
 
-Pas encore définie.
+## Known limitations
+
+- **One writer.** Shared views are always read-only.
+- **No `.md` download.** Markdown can still be copied from the editing view.
+- **Network required for persistence.** The app opens from `file://`, but
+  reading or writing the Gist requires access to the GitHub API.
+- **Last successful save wins.** There is no revision-merging interface.
+
+## Technical constraints
+
+Static HTML, CSS, and JavaScript, zero dependencies, no build, and no CDN. `fetch` is used only for
+the GitHub Gist API. All `localStorage` access is guarded by an in-memory
+fallback for environments where browser storage throws.
+
+## License
+
+No license has been selected yet.

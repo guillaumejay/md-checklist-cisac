@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>md-checklist</title>
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<!--
+THESIS: A local working register for remote Gists, refusing a dashboard of interchangeable cards.
+OWN-WORLD: Cold paper, navy ink, restrained teal, ruled rows, and compact utility controls.
+STORY: Configure GitHub once, create or attach a checklist, then reopen it from a durable local index.
+FIRST VIEWPORT: Identity and token access lead; creation and attachment sit together above the library ledger.
+FORM: Operate-mode registry, assigned structure seed 305587b6.
+FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
+-->
+  <main class="wrap">
+    <header class="masthead">
+      <h1 id="pageTitle">My checklists</h1>
+      <div class="row"><span class="eyebrow" id="pageMeta">local Gist index</span><button class="btn" id="langButton">FR</button></div>
+    </header>
+
+    <section class="panel" aria-labelledby="tokenTitle">
+      <span class="section-label" id="tokenTitle">GitHub access</span>
+      <p id="tokenHelp"></p>
+      <div class="row" style="margin-top:12px">
+        <input class="field" id="tokenInput" type="password" autocomplete="off">
+        <button class="btn primary" id="saveToken">Save token</button>
+      </div>
+      <p class="status" id="tokenStatus" aria-live="polite"></p>
+    </section>
+
+    <section class="panel" aria-labelledby="createTitle">
+      <span class="section-label" id="createTitle">Create a checklist</span>
+      <p id="createHelp"></p>
+      <div class="actions" style="margin-top:12px"><button class="btn primary" id="createButton">Create checklist</button></div>
+    </section>
+
+    <section class="panel" aria-labelledby="addTitle">
+      <span class="section-label" id="addTitle">Add an existing Gist</span>
+      <p id="addHelp"></p>
+      <div class="row" style="margin-top:12px">
+        <input class="field" id="gistInput" autocomplete="off">
+        <button class="btn" id="addButton">Add to library</button>
+      </div>
+      <p class="status" id="actionStatus" aria-live="polite"></p>
+    </section>
+
+    <section class="library" aria-labelledby="libraryTitle">
+      <div class="library-head"><h2 id="libraryTitle">My checklists</h2><span class="meta" id="libraryCount"></span></div>
+      <div class="library-list" id="libraryList"></div>
+    </section>
+  </main>
+  <script src="js/storage.js"></script>
+  <script src="js/markdown.js"></script>
+  <script src="js/gist.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/home.js"></script>
+</body>
+</html>

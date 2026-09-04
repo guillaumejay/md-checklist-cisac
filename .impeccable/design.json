@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-16T00:00:00.000Z",
+  "title": "Design System: md-checklist",
+  "extensions": {
+    "breakpoints": [{ "name": "compact", "value": "560px" }],
+    "motion": [{ "name": "progress", "value": "250ms ease", "purpose": "Gauge state changes only." }],
+    "shadows": []
+  },
+  "components": [],
+  "narrative": {
+    "northStar": "The Working Register",
+    "overview": "A precise utility laid on cool office paper, structured by ruled rows and explicit status rather than dashboard decoration.",
+    "keyCharacteristics": ["Cool neutral canvas", "Compact operational controls", "Ruled library rows"],
+    "rules": [{ "name": "The Scarce Accent Rule", "body": "Teal identifies progress or interaction state, not generic decoration.", "section": "colors" }],
+    "dos": ["Keep state and recovery actions visible in plain language.", "Preserve a clear reading order at narrow widths."],
+    "donts": ["Turn the library into a grid of statistic cards.", "Use the accent color as decoration."]
+  }
+}
