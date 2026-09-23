@@ -46,7 +46,7 @@
   function scheduleSave() { clearTimeout(timer); timer = setTimeout(() => save(false), 2000); }
   async function loadRemote() {
     if (!gistId || busy) return; busy = true; status(text("loading"), false);
-    try { const remote = await app.gist.read(gistId); lines = remote.snapshot.md.replace(/\r\n?/g, "\n").split("\n"); lastPayload = markdown(); render(); app.rememberGist({ id: gistId, title: app.stats(lastPayload).title }); status(text("loaded"), false); }
+    try { const remote = await app.gist.read(gistId, readonly ? null : app.store.get(app.keys.token)); lines = remote.snapshot.md.replace(/\r\n?/g, "\n").split("\n"); lastPayload = markdown(); render(); app.rememberGist({ id: gistId, title: app.stats(lastPayload).title }); status(text("loaded"), false); }
     catch (error) { status(error.message, true); }
     finally { busy = false; }
   }

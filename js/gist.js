@@ -27,7 +27,14 @@
     return snapshot;
   }
   app.gist = {
-    async read(id) { const gist = await request(API + "/" + encodeURIComponent(id), { headers: headers() }); return { snapshot: parse(gist), updatedAt: gist.updated_at }; },
+    async read(id, token) {
+      // no-store: GitHub serves Gists with max-age=60, so a cached read after a save would resurrect stale content.
+      const url = API + "/" + encodeURIComponent(id);
+      let gist;
+      try { gist = await request(url, { headers: headers(token), cache: "no-store" }); }
+      catch (error) { if (!token || !error.auth) throw error; gist = await request(url, { headers: headers(), cache: "no-store" }); }
+      return { snapshot: parse(gist), updatedAt: gist.updated_at };
+    },
     async create(md, token) {
       const content = JSON.stringify({ version: 2, md, updatedAt: new Date().toISOString() });
       const body = { description: "md-checklist", public: false, files: { [FILE]: { content } } };

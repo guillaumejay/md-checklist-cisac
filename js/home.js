@@ -17,7 +17,7 @@
   }
   async function hydrate(item, nameEl, metaEl) {
     try {
-      const remote = await app.gist.read(item.id);
+      const remote = await app.gist.read(item.id, app.store.get(app.keys.token));
       const stats = app.stats(remote.snapshot.md);
       nameEl.textContent = stats.title;
       metaEl.textContent = stats.done + "/" + stats.total + " · " + item.id.slice(0, 8) + "…";
@@ -52,7 +52,7 @@
     Object.keys(map).forEach(id => { $(id).textContent = app.t(map[id]); });
     $("tokenInput").placeholder = app.t("tokenPlaceholder"); $("gistInput").placeholder = app.t("addPlaceholder"); $("langButton").textContent = app.t("lang");
   }
-  $("saveToken").addEventListener("click", () => { const token = $("tokenInput").value.trim(); if (token) app.store.set(app.keys.token, token); $("tokenInput").value = ""; $("tokenStatus").textContent = app.t("tokenSaved"); });
+  $("saveToken").addEventListener("click", () => { const token = $("tokenInput").value.trim(); if (!token) { $("tokenStatus").textContent = app.t("tokenEmpty"); return; } app.store.set(app.keys.token, token); $("tokenInput").value = ""; $("tokenStatus").textContent = app.t("tokenSaved"); });
   $("createButton").addEventListener("click", async () => {
     const token = app.store.get(app.keys.token); if (!token) { setStatus(app.t("tokenNeeded"), true); return; }
     if (busy) return; busy = true; $("createButton").disabled = true; setStatus(app.t("loading"), false);
@@ -63,7 +63,7 @@
   $("addButton").addEventListener("click", async () => {
     const id = app.extractGistId($("gistInput").value); if (!id) { setStatus(app.t("badId"), true); return; }
     if (busy) return; busy = true; $("addButton").disabled = true; setStatus(app.t("loading"), false);
-    try { const remote = await app.gist.read(id); app.rememberGist({ id, title: app.stats(remote.snapshot.md).title }); $("gistInput").value = ""; setStatus(app.t("added"), false); renderLibrary(); }
+    try { const remote = await app.gist.read(id, app.store.get(app.keys.token)); app.rememberGist({ id, title: app.stats(remote.snapshot.md).title }); $("gistInput").value = ""; setStatus(app.t("added"), false); renderLibrary(); }
     catch (error) { setStatus(error.message, true); }
     finally { busy = false; $("addButton").disabled = false; }
   });
