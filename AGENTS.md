@@ -10,6 +10,8 @@ Static multi-file web app with no dependencies and no build step. Read
   the owner's token.
 - `checklist.html#gist=<ID>&mode=read` is always read-only.
 - `css/app.css` contains the shared visual system.
+- `js/version.js` holds the build stamp; it stays `dev` in the repository and
+  is overwritten by `.github/workflows/pages.yml` at deploy time.
 - `js/storage.js` owns guarded `localStorage` access and library metadata.
 - `js/gist.js` is the only GitHub API boundary.
 - `js/markdown.js` owns the intentionally small Markdown grammar and escaping.

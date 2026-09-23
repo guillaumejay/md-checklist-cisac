@@ -51,6 +51,8 @@
     const map = { pageTitle:"library", pageMeta:"localIndex", tokenTitle:"tokenTitle", tokenHelp:"tokenHelp", saveToken:"saveToken", createTitle:"createTitle", createHelp:"createHelp", createButton:"create", addTitle:"addTitle", addHelp:"addHelp", addButton:"add", libraryTitle:"library" };
     Object.keys(map).forEach(id => { $(id).textContent = app.t(map[id]); });
     $("tokenInput").placeholder = app.t("tokenPlaceholder"); $("gistInput").placeholder = app.t("addPlaceholder"); $("langButton").textContent = app.t("lang");
+    const v = app.version || { commit: "dev", date: "" };
+    $("buildInfo").textContent = app.t("build") + " " + v.commit + (v.date ? " · " + v.date : "");
   }
   $("saveToken").addEventListener("click", () => { const token = $("tokenInput").value.trim(); if (!token) { $("tokenStatus").textContent = app.t("tokenEmpty"); return; } app.store.set(app.keys.token, token); $("tokenInput").value = ""; $("tokenStatus").textContent = app.t("tokenSaved"); });
   $("createButton").addEventListener("click", async () => {

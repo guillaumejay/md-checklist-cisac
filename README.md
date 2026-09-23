@@ -62,11 +62,20 @@ uses relative paths, and supports project-site URLs such as
 
 1. Open the repository on GitHub.
 2. Go to **Settings → Pages**.
-3. Under **Build and deployment**, choose **Deploy from a branch**.
-4. Select the `main` branch and the `/(root)` folder, then click **Save**.
-5. Wait for the Pages deployment to finish.
+3. Under **Build and deployment → Source**, choose **GitHub Actions**.
+4. On a GitHub fork, open the **Actions** tab and click **Enable workflows**
+   (forks start with Actions disabled).
+5. Push to `main`, or run **Deploy to GitHub Pages** from the Actions tab, and
+   wait for it to finish.
 6. Open `https://USERNAME.github.io/md-checklist/`, replacing
    `USERNAME` with your GitHub username.
+
+The workflow in `.github/workflows/pages.yml` stamps `js/version.js` with the
+short commit SHA and commit date, shown at the bottom of the library page
+(for example `version 9aeebf0 · 2026-09-23`). Compare it with the latest commit
+of the upstream repository to know whether a fork is up to date. Choosing
+**Deploy from a branch** instead still works, but the footer then shows
+`version dev`, as it does from `file://` and on Vercel.
 
 GitHub Pages expects an `index.html`, `index.md`, or `README.md` at the root of
 the publishing source. This repository now includes `index.html`, so the

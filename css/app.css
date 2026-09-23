@@ -36,6 +36,7 @@ button, input, textarea { font: inherit; }
 .hint { margin-top: 9px !important; font-size: 12px !important; }
 .status { min-height: 1.5em; margin-top: 10px; }
 .status.error { color: var(--warn); }
+.build { display: block; margin-top: 32px; text-align: right; }
 .library { margin-top: 26px; }
 .library-head { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; margin-bottom: 8px; }
 .library-head h2 { margin: 0; font-size: 18px; }
