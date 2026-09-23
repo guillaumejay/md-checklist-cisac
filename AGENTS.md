@@ -1,6 +1,7 @@
 # md-checklist — agent instructions
 
-Static multi-file web app with no dependencies and no build step. Read
+Static multi-file web app with no dependencies and no build step; the only
+deploy-time change is the GitHub Pages workflow stamping `js/version.js`. Read
 `README.md` and `PRODUCT.md` before changing product behavior.
 
 ## Architecture

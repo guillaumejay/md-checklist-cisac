@@ -70,12 +70,17 @@ uses relative paths, and supports project-site URLs such as
 6. Open `https://USERNAME.github.io/md-checklist/`, replacing
    `USERNAME` with your GitHub username.
 
-The workflow in `.github/workflows/pages.yml` stamps `js/version.js` with the
-short commit SHA and commit date, shown at the bottom of the library page
-(for example `version 9aeebf0 · 2026-09-23`). Compare it with the latest commit
-of the upstream repository to know whether a fork is up to date. Choosing
-**Deploy from a branch** instead still works, but the footer then shows
-`version dev`, as it does from `file://` and on Vercel.
+The workflow in `.github/workflows/pages.yml` runs the tests, publishes only
+`index.html`, `checklist.html`, `css/`, and `js/`, and stamps `js/version.js`
+with the deployed repository's short commit SHA and commit date, shown at the
+bottom of the library page (for example `version 9aeebf0 · 2026-09-23`). A fork
+that tracks upstream without commits of its own shows the same SHA as upstream's
+latest commit when it is up to date; a fork with its own commits shows its own
+SHA, so compare dates or use GitHub's "commits behind" indicator instead.
+
+If you keep **Deploy from a branch**, the site still works and the workflow
+only runs the tests and skips deployment; the footer then shows `version dev`,
+as it does from `file://` and on Vercel.
 
 GitHub Pages expects an `index.html`, `index.md`, or `README.md` at the root of
 the publishing source. This repository now includes `index.html`, so the
